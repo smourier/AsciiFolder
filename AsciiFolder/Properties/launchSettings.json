@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AsciiFolder": {
+      "commandName": "Project",
+      "commandLineArgs": "d:\\temp\\cam /? /znf"
+    }
+  }
+}
