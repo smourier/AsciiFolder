@@ -2,7 +2,7 @@
   "profiles": {
     "AsciiFolder": {
       "commandName": "Project",
-      "commandLineArgs": "d:\\temp\\cam /? /znf"
+      "commandLineArgs": "d:\\temp\\cam /fd /zfs"
     }
   }
 }

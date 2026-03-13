@@ -8,6 +8,8 @@ internal class Program
 {
     static int _indent;
     static bool _noFiles;
+    static bool _filesSize;
+    static bool _filesLastWriteTime;
     static string _directoriesSearchPattern = null!;
     static string _filesSearchPattern = null!;
     static ConsoleColor _folderColor;
@@ -39,7 +41,7 @@ internal class Program
 
     static void SafeMain()
     {
-        Console.WriteLine("AsciiFolder - Copyright (C) 2024-" + DateTime.Now.Year + " Simon Mourier. All rights reserved.");
+        Console.WriteLine($"AsciiFolder v{Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion} - Copyright (C) 2024-" + DateTime.Now.Year + " Simon Mourier. All rights reserved.");
         Console.WriteLine();
 
         var inputPath = CommandLine.Current.GetNullifiedArgument(0) ?? Path.GetFullPath(".");
@@ -51,6 +53,8 @@ internal class Program
 
         _indent = Math.Max(1, CommandLine.Current.GetArgument("i", 4));
         _noFiles = CommandLine.Current.GetArgument<bool>("nf");
+        _filesSize = CommandLine.Current.GetArgument<bool>("fs");
+        _filesLastWriteTime = CommandLine.Current.GetArgument<bool>("fd");
         _options.AttributesToSkip = CommandLine.Current.GetArgument("as", FileAttributes.System | FileAttributes.Hidden);
         _directoriesSearchPattern = CommandLine.Current.GetNullifiedArgument("dsp") ?? "*";
         _filesSearchPattern = CommandLine.Current.GetNullifiedArgument("fsp") ?? "*";
@@ -101,6 +105,30 @@ internal class Program
                 Console.Write(indent);
                 Console.Write(isLastFile ? "└── " : "├── ");
                 Console.WriteLine(files[i].Name);
+
+                if (_filesSize || _filesLastWriteTime)
+                {
+                    var sizeIndent = indent + (isLastFile ? " " : "│");
+                    sizeIndent += new string(' ', _indent);
+                    Console.Write(sizeIndent);
+
+                    if (_filesSize)
+                    {
+                        var sizeStr = Conversions.FormatByteSize(files[i].Length);
+                        Console.Write(sizeStr);
+                    }
+
+                    if (_filesLastWriteTime)
+                    {
+                        var timeStr = files[i].LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
+                        if (_filesSize)
+                        {
+                            Console.Write(" ── ");
+                        }
+                        Console.Write(timeStr);
+                    }
+                    Console.WriteLine();
+                }
             }
         }
     }
@@ -149,6 +177,8 @@ internal class Program
         iw.Indent++;
         iw.WriteLine("/i   Indentation size (default: 4).");
         iw.WriteLine("/nf  Don't output files.");
+        iw.WriteLine("/fs  Display files size");
+        iw.WriteLine("/fd  Display files last write time");
         iw.WriteLine("/dsp Directories search pattern (default: *).");
         iw.WriteLine("/fsp Files search pattern (default: *).");
         iw.WriteLine("/fc  Folder color (default: Yellow)."); OutputEnumValues<ConsoleColor>(iw, tabIndent, [ConsoleColor.Black], v =>

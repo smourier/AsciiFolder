@@ -1,10 +1,29 @@
 ﻿namespace AsciiFolder.Utilities;
 
-public static class Conversions
+public static partial class Conversions
 {
     private static readonly char[] _enumSeparators = [',', ';', '+', '|', ' '];
     private static readonly Lazy<MethodInfo> _tryChangeType = new(() => typeof(Conversions).GetMethods().First(m => m.Name == nameof(TryChangeType) && m.GetParameters().Length == 3));
     private static readonly Lazy<MethodInfo> _tryParseEnum = new(() => typeof(Conversions).GetMethods().First(m => m.Name == nameof(TryParseEnum) && m.GetParameters().Length == 2));
+
+    public static string? FormatByteSize(long size)
+    {
+        var sizeInChars = 256 * 2;
+        var pwstr = Marshal.AllocCoTaskMem(sizeInChars);
+        try
+        {
+            StrFormatByteSizeW(size, pwstr, sizeInChars);
+            return Marshal.PtrToStringUni(pwstr);
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(pwstr);
+        }
+    }
+
+    [LibraryImport("SHLWAPI", StringMarshalling = StringMarshalling.Utf16)]
+    [PreserveSig]
+    private static partial nint StrFormatByteSizeW(long qdw, [MarshalUsing(CountElementName = nameof(cchBuf))] nint pszBuf, int cchBuf);
 
     public static bool EqualsIgnoreCase(this string? thisString, string? text, bool trim = true)
     {

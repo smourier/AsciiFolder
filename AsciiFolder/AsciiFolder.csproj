@@ -5,8 +5,26 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<PublishAot>true</PublishAot>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<InvariantGlobalization>true</InvariantGlobalization>
+
+		<Title>AsciiFolder</Title>
+		<Company>Simon Mourier</Company>
+		<Authors>Simon Mourier</Authors>
+		<Product>AsciiFolder</Product>
+		<PackageTags>ASCII;ASCII art;Windows;Folder;Tool</PackageTags>
+		<Copyright>Copyright (C) 2025-$([System.DateTime]::UtcNow.ToString("yyyy")) Simon Mourier. All rights reserved.</Copyright>
+		<Description>AsciiFolder</Description>
+		<ProductVersion>1.0.0.0</ProductVersion>
+		<FileVersion>1.0.0.0</FileVersion>
+		<InformationalVersion>1.0.0.0</InformationalVersion>
+		<SourceRevisionId>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
+
 	</PropertyGroup>
+
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.DisableRuntimeMarshallingAttribute"></AssemblyAttribute>
+	</ItemGroup>
 
 	<ItemGroup>
 		<Using Include="AsciiFolder.Utilities" />
@@ -19,6 +37,7 @@
 		<Using Include="System.Linq" />
 		<Using Include="System.Reflection" />
 		<Using Include="System.Runtime.InteropServices" />
+		<Using Include="System.Runtime.InteropServices.Marshalling" />
 		<Using Include="System.Text" />
 		<Using Include="System.Threading.Tasks" />
 	</ItemGroup>
