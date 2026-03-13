@@ -9,6 +9,7 @@ internal class Program
     static int _indent;
     static bool _noFiles;
     static bool _filesSize;
+    static int _maxDepth;
     static bool _filesLastWriteTime;
     static string _directoriesSearchPattern = null!;
     static string _filesSearchPattern = null!;
@@ -52,6 +53,7 @@ internal class Program
         }
 
         _indent = Math.Max(1, CommandLine.Current.GetArgument("i", 4));
+        _maxDepth = CommandLine.Current.GetArgument<int?>("md") ?? int.MaxValue;
         _noFiles = CommandLine.Current.GetArgument<bool>("nf");
         _filesSize = CommandLine.Current.GetArgument<bool>("fs");
         _filesLastWriteTime = CommandLine.Current.GetArgument<bool>("fd");
@@ -68,11 +70,14 @@ internal class Program
         var sortBy = CommandLine.Current.GetArgument("sb", SortBy.Name);
         _sortByComparer = new SortByComparer(sortBy, sortDirection);
 
-        DumpFolder(inputPath, string.Empty, true, !_noFiles);
+        DumpFolder(0, inputPath, string.Empty, true, !_noFiles);
     }
 
-    static void DumpFolder(string path, string indent, bool isLast, bool showFiles)
+    static void DumpFolder(int depth, string path, string indent, bool isLast, bool showFiles)
     {
+        if (depth >= _maxDepth)
+            return;
+
         var dir = new DirectoryInfo(path);
 
         Console.Write(indent);
@@ -93,7 +98,7 @@ internal class Program
         for (var i = 0; i < subDirs.Length; i++)
         {
             var isLastDir = i == subDirs.Length - 1 && files.Length == 0;
-            DumpFolder(subDirs[i].FullName, indent, isLastDir, showFiles);
+            DumpFolder(depth + 1, subDirs[i].FullName, indent, isLastDir, showFiles);
         }
 
         if (showFiles)
@@ -176,6 +181,7 @@ internal class Program
         iw.WriteLine("Options:");
         iw.Indent++;
         iw.WriteLine("/i   Indentation size (default: 4).");
+        iw.WriteLine("/md  Maximum depth to recurse (default: no limit).");
         iw.WriteLine("/nf  Don't output files.");
         iw.WriteLine("/fs  Display files size");
         iw.WriteLine("/fd  Display files last write time");

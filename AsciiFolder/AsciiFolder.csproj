@@ -19,11 +19,16 @@
 		<FileVersion>1.0.0.0</FileVersion>
 		<InformationalVersion>1.0.0.0</InformationalVersion>
 		<SourceRevisionId>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
+		<ApplicationIcon>AsciiFolder.ico</ApplicationIcon>
 
 	</PropertyGroup>
 
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.DisableRuntimeMarshallingAttribute"></AssemblyAttribute>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="AsciiFolder.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
