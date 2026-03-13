@@ -2,7 +2,7 @@
 A tool that generates an ascii tree from a local folder.
 
 # Example
-When running this command:
+When running this command (md means maximum depth):
 
     AsciiFolder AsciiFolder /md:2
 
