@@ -1,6 +1,7 @@
 ﻿using System.CodeDom.Compiler;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace AsciiFolder;
 
@@ -13,6 +14,8 @@ internal class Program
     static bool _filesLastWriteTime;
     static string _directoriesSearchPattern = null!;
     static string _filesSearchPattern = null!;
+    static Regex? _directoriesExcludePattern = null!;
+    static Regex? _filesExcludePattern = null!;
     static ConsoleColor _folderColor;
     static SortByComparer _sortByComparer = null!;
     static readonly EnumerationOptions _options = new()
@@ -36,7 +39,10 @@ internal class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(ex.Message);
+            Console.ResetColor();
         }
     }
 
@@ -60,6 +66,8 @@ internal class Program
         _options.AttributesToSkip = CommandLine.Current.GetArgument("as", FileAttributes.System | FileAttributes.Hidden);
         _directoriesSearchPattern = CommandLine.Current.GetNullifiedArgument("dsp") ?? "*";
         _filesSearchPattern = CommandLine.Current.GetNullifiedArgument("fsp") ?? "*";
+        _directoriesExcludePattern = FileSpecMatcher.BuildRegex(CommandLine.Current.GetNullifiedArgument("dep"));
+        _filesExcludePattern = FileSpecMatcher.BuildRegex(CommandLine.Current.GetNullifiedArgument("fep"));
         _folderColor = CommandLine.Current.GetArgument("fc", ConsoleColor.Yellow);
         if (_folderColor == ConsoleColor.Black)
         {
@@ -78,6 +86,9 @@ internal class Program
         if (depth >= _maxDepth)
             return;
 
+        if (_directoriesExcludePattern?.IsMatch(Path.GetFileName(path)) == true)
+            return;
+
         var dir = new DirectoryInfo(path);
 
         Console.Write(indent);
@@ -90,9 +101,17 @@ internal class Program
         indent += new string(' ', _indent - 1);
 
         var subDirs = dir.GetDirectories(_directoriesSearchPattern, _options);
+        if (_directoriesExcludePattern != null)
+        {
+            subDirs = [.. subDirs.Where(d => !_directoriesExcludePattern.IsMatch(d.Name))];
+        }
         subDirs.Sort(_sortByComparer);
 
         var files = showFiles ? dir.GetFiles(_filesSearchPattern, _options) : [];
+        if (_filesExcludePattern != null)
+        {
+            files = [.. files.Where(f => !_filesExcludePattern.IsMatch(f.Name))];
+        }
         files.Sort(_sortByComparer);
 
         for (var i = 0; i < subDirs.Length; i++)
@@ -106,7 +125,6 @@ internal class Program
             for (var i = 0; i < files.Length; i++)
             {
                 var isLastFile = i == files.Length - 1;
-
                 Console.Write(indent);
                 Console.Write(isLastFile ? "└── " : "├── ");
                 Console.WriteLine(files[i].Name);
@@ -135,6 +153,45 @@ internal class Program
                     Console.WriteLine();
                 }
             }
+        }
+    }
+
+    static class FileSpecMatcher
+    {
+        public static Regex? BuildRegex(string? wildcards)
+        {
+            if (wildcards == null)
+                return null;
+
+            if (OperatingSystem.IsWindows())
+                return BuildWindowsRegex(wildcards);
+
+            var parts = wildcards
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(w => Regex.Escape(w)
+                    .Replace(@"\*", ".*")
+                    .Replace(@"\?", "."));
+
+            var pattern = "^(" + string.Join("|", parts) + ")$";
+            var options = RegexOptions.Compiled;
+
+            return new Regex(pattern, options);
+        }
+
+        private static Regex BuildWindowsRegex(string wildcards)
+        {
+            var parts = wildcards
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(p => p == "*.*" ? "*" : p); // Windows quirk
+
+            var regexParts = parts.Select(w =>
+                Regex.Escape(w)
+                    .Replace(@"\*", ".*")
+                    .Replace(@"\?", ".")
+            );
+
+            var pattern = "^(" + string.Join("|", regexParts) + ")$";
+            return new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
     }
 
@@ -187,7 +244,9 @@ internal class Program
         iw.WriteLine("/fd  Display files last write time");
         iw.WriteLine("/dsp Directories search pattern (default: *).");
         iw.WriteLine("/fsp Files search pattern (default: *).");
-        iw.WriteLine("/fc  Folder color (default: Yellow)."); OutputEnumValues<ConsoleColor>(iw, tabIndent, [ConsoleColor.Black], v =>
+        iw.WriteLine("/dep Directories exclude patterns. Use ; as a separator for multiple patterns.");
+        iw.WriteLine("/fep Files exclude patterns. Use ; as a separator for multiple patterns.");
+        iw.WriteLine("/fc  Folder color (default: Yellow)."); OutputEnumValues(iw, tabIndent, [ConsoleColor.Black], v =>
         {
             Console.ForegroundColor = v;
             iw.Write(v);
